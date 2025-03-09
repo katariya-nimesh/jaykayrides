@@ -28,7 +28,7 @@ Route::group(['prefix' => 'driver'], function () {
         Route::controller(VehicleController::class)->group(function () {
             Route::post('/store', 'store');
             Route::post('/update/{id}', 'update');
-            Route::post('/get-payment-status', 'getPaymentStatus');
+            Route::post('/get-payment-status', 'getPaymentStatus'); //
         });
         Route::group(['prefix' => 'category'], function () {
             Route::controller(VehicleCategoryController::class)->group(function () {

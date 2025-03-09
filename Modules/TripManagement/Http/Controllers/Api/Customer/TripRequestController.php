@@ -96,7 +96,7 @@ class TripRequestController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function getEstimatedFare(Request $request): JsonResponse
+    public function getEstimatedFare(Request $request): JsonResponse //
     {
 
         $trip = $this->getResumeRide();
@@ -959,7 +959,7 @@ class TripRequestController extends Controller
      * @param Request $request
      * @return JsonResponse
      */
-    public function finalFareCalculation(Request $request): JsonResponse
+    public function finalFareCalculation(Request $request): JsonResponse //
     {
         $trip = $this->trip->getBy(column: 'id', value: $request['trip_request_id']
             , attributes: ['relations' =>

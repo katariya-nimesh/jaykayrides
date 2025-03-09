@@ -79,8 +79,15 @@ trait CommonTrait
             $route = getRoutes($pickup_coordinate, $drop_coordinate, $intermediate_coordinate, [$drivingMode]);
             $distance_in_km = $route[0]['distance'];
 
-            $distance_wise_fare_cancelled = $fare->base_fare_per_km * $distance_in_km;
-            $actual_fare = $fare->base_fare + $distance_wise_fare_cancelled;
+            if ($distance_in_km <= 3) {
+                $distance_wise_fare_cancelled = $fare->base_fare;
+            } elseif ($distance_in_km > 3 && $distance_in_km <= 10) {
+                $distance_wise_fare_cancelled = $fare->base_fare + ($fare->base_fare_per_km * ($distance_in_km - 3));
+            } else {
+                $distance_wise_fare_cancelled = $fare->base_fare + (($fare->base_fare_per_km - 2) * ($distance_in_km - 3)) - 2;
+            }
+
+            $actual_fare = $distance_wise_fare_cancelled;
             if ($trip->extra_fare_fee > 0) {
                 $extraFare = ($actual_fare * $trip->extra_fare_fee) / 100;
                 $actual_fare += $extraFare;
@@ -94,12 +101,20 @@ trait CommonTrait
             $route = getRoutes($pickup_coordinate, $drop_coordinate, $intermediate_coordinate, [$drivingMode]);
             $distance_in_km = $route[0]['distance'];
 
-            $distance_wise_fare_completed = $fare->base_fare_per_km * $distance_in_km;
-            $actual_fare = $fare->base_fare + $distance_wise_fare_completed;
+            if ($distance_in_km <= 3) {
+                $distance_wise_fare_completed = $fare->base_fare;
+            } elseif ($distance_in_km > 3 && $distance_in_km <= 10) {
+                $distance_wise_fare_completed = $fare->base_fare + ($fare->base_fare_per_km * ($distance_in_km - 3));
+            } else {
+                $distance_wise_fare_completed = $fare->base_fare + (($fare->base_fare_per_km - 2) * ($distance_in_km - 3)) - 2;
+            }
+
+            $actual_fare = $distance_wise_fare_completed;
             if ($trip->extra_fare_fee > 0) {
                 $extraFare = ($actual_fare * $trip->extra_fare_fee) / 100;
                 $actual_fare += $extraFare;
             }
+
             $vat_percent = (double)get_cache('vat_percent') ?? 1;
             $distanceFare = $trip->rise_request_count > 0 ? $trip->actual_fare / (1 + ($vat_percent / 100)) : $actual_fare;
             $actual_fare = $bid_on_fare ? $bid_on_fare->bid_fare / (1 + ($vat_percent / 100)) : $distanceFare;
@@ -226,13 +241,33 @@ trait CommonTrait
                 foreach ($routes as $route) {
                     if ($route['drive_mode'] === 'DRIVE') {
                         $distance = $route['distance'];
-                        $drive_fare = $trip->base_fare_per_km * $distance;
+                        $base_fare = $trip->base_fare;
+                        $fare_per_km = $trip->base_fare_per_km;
+
+                        if ($distance <= 3) {
+                            $drive_fare = $base_fare;
+                        } elseif ($distance > 3 && $distance <= 10) {
+                            $drive_fare = $base_fare + ($fare_per_km * ($distance - 3));
+                        } else {
+                            $drive_fare = (($base_fare + (($fare_per_km - 2) * ($distance - 3))) - 2);
+                        }
+
                         $drive_est_distance = (double)$routes[0]['distance'];
                         $drive_est_duration = $route['duration'];
                         $drive_polyline = $route['encoded_polyline'];
                     } elseif ($route['drive_mode'] === 'TWO_WHEELER') {
                         $distance = $route['distance'];
-                        $bike_fare = $trip->base_fare_per_km * $distance;
+                        $base_fare = $trip->base_fare;
+                        $fare_per_km = $trip->base_fare_per_km;
+
+                        if ($distance <= 3) {
+                            $bike_fare = $base_fare;
+                        } elseif ($distance > 3 && $distance <= 10) {
+                            $bike_fare = $base_fare + ($fare_per_km * ($distance - 3));
+                        } else {
+                            $bike_fare = (($base_fare + (($fare_per_km - 2) * ($distance - 3))) - 2);
+                        }
+
                         $bike_est_distance = (double)$routes[0]['distance'];
                         $bike_est_duration = $route['duration'];
                         $bike_polyline = $route['encoded_polyline'];
@@ -240,7 +275,7 @@ trait CommonTrait
                 }
                 $extraFare = $this->checkZoneExtraFare($zone);
                 $points = (int)getSession('currency_decimal_point') ?? 0;
-                $est_fare = $trip->vehicleCategory->type === 'car' ? round(($trip->base_fare + $drive_fare), $points) : round(($trip->base_fare + $bike_fare), $points);
+                $est_fare = $trip->vehicleCategory->type === 'car' ? round(($drive_fare), $points) : round(($bike_fare), $points);
                 if (!empty($extraFare)) {
                     $extraEstFareAmount = ($est_fare * $extraFare['extraFareFee']) / 100;
                     $extraEstFare = $extraEstFareAmount + $est_fare;

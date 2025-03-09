@@ -18,7 +18,7 @@ class Kernel extends ConsoleKernel
         $schedule->command('trip-request:cancel')->everyMinute();
         $schedule->call(function () {
             app(\Modules\VehicleManagement\Http\Controllers\Api\New\Driver\VehicleController::class)->checkPaymentStatus();
-        })->everyMinute();
+        })->everyMinute(); //
     }
 
     /**
